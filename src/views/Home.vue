@@ -1,14 +1,9 @@
 <template lang="pug">
 .home
+  .scrollBoard(ref="scrollBoard")
+
   .home__wrapper(
     ref="wrapper",
-    @wheel="Wheel",
-    @mousedown="On",
-    @mousemove="To",
-    @mouseup="Off",
-    @touchstart="On",
-    @touchmove="To",
-    @touchend="Off",
   )
 
     main.home__main.main(ref="main")
@@ -16,11 +11,6 @@
         h2.main__heading
           a.main__anchor(href="")
             img.main__image(:src="section.img", :alt="section.alt", ref="images")
-        //- .main__about.about(v-if="section.id == 'about'")
-        //-   h3.about__heading Ryota Inoue
-        //-   p.about__job.job
-        //-     span.job__main UX Engineer
-        //-     span.job__sub 技術を駆使してより良いUXを開発するエンジニアです。
 
     .parameter(ref="parameter")
       span.parameter__section(:data-id="section.id" data-on="false" ref="parameterSection" v-for="section in sections")
@@ -64,10 +54,12 @@ export default {
       isWheel: false,
       isDrag: false,
       isDirection: false, // trueは縦方向、falseは横方向,
-      index: 0,
+      current: 0,
+      meter: 0,
       width: 0,
       height: 0,
-      move: 0,
+      moveX: 0,
+      moveY: 0,
       onX: 0,
       toX: 0,
     }
@@ -75,7 +67,7 @@ export default {
   watch:{},
   computed:{},
   mounted(){
-    document.querySelector("body").classList.add("overflow-hidden");
+    
 
     this.width = (this.$refs["main"].clientWidth - window.innerWidth);
 
@@ -90,38 +82,69 @@ export default {
   },
   methods:{
     Parameter(){
-      const num = this.move / this.width * this.$refs["parameter"].clientWidth;
-      this.$refs["parameterMain"].style.width = num+"px";
+      this.meter = this.moveX / this.width * this.$refs["parameter"].clientWidth;
+      this.$refs["parameterMain"].style.width = this.meter+"px";
 
       for (let index = 0; index < this.$refs["parameterSection"].length; index++) {
         const pos = this.$refs["parameterSection"][index].dataset.pos;
         const toBoolean = (data) => { return data === "true"; }
         const Boolean = toBoolean(this.$refs["parameterSection"][index].dataset.on);
-        if(num >= pos && !Boolean){
+        if(this.meter >= pos && !Boolean){
           this.$refs["parameterSection"][index].dataset.on = true;
-        }else if(num <= pos && Boolean){
+          this.isDirection = true;
+          this.current++;
+          this.height = this.$refs["sections"][this.current].clientHeight;
+          this.moveY = 0;
+        }else if(this.meter <= pos && Boolean){
           this.$refs["parameterSection"][index].dataset.on = false;
+          if(this.current == this.$refs["sections"].length - 1) {
+            this.isDirection = false;
+          } else{
+            this.isDirection = true;
+          }
+          this.current--;
+          this.height = this.$refs["sections"][this.current].clientHeight;
+          this.moveY = this.height;
         }
       }
+
+      console.log();
     },
     Wheel(e){
-      if(!this.isDirection && this.move >= 0 && this.move <= this.width){
+      if(!this.isDirection && this.moveX >= 0 && this.moveX <= this.width){
         // 移動範囲取得
-        this.move += e.deltaX;
-        this.move += e.deltaY;
+        this.moveX += e.deltaX;
+        this.moveX += e.deltaY;
 
         // 移動範囲を超えてしまった場合、最大・最小値に戻す
-        if(this.move <= 0){
-          this.move = 0;
-        }else if(this.move >= this.width){
-          this.move = this.width;
+        if(this.moveX <= 0){
+          this.moveX = 0;
+        }else if(this.moveX >= this.width){
+          this.moveX = this.width;
         }
 
         // 横方向に移動
-        this.$refs["main"].style.transform = "translate3d(-"+this.move+"px, 0, 0)";
+        this.$refs["main"].style.transform = "translate3d(-"+this.moveX+"px, 0, 0)";
 
         // 移動パラメーター設定
         this.Parameter();
+      }else if(this.isDirection && this.moveY >= 0 && this.moveY <= this.height){
+        // 移動範囲取得
+        this.moveY += e.deltaX;
+        this.moveY += e.deltaY;
+
+        // 移動範囲を超えてしまった場合、最大・最小値に戻す
+        if(this.moveY <= 0){
+          this.moveY = 0;
+          this.isDirection = false;
+        }else if(this.moveY >= this.height){
+          this.moveY = this.height;
+          if(this.current == this.$refs["sections"].length - 1) return;
+          this.isDirection = false;
+        }
+
+        // 縦方向に移動
+        this.$refs["sections"][this.current].style.transform = "translate3d(0, -"+this.moveY+"px, 0)";
       }
     },
     On(e){
@@ -159,7 +182,6 @@ export default {
 <style lang="scss" scoped>
 .home{
   &__wrapper{
-    overflow: hidden;
     position: fixed;
     top: 0;
     left: 0;
@@ -178,8 +200,6 @@ export default {
     left: 0;
     min-width: 100%;
     height: 100%;
-    transition-duration: 500ms;
-    transition-timing-function: $easeOutSine;
     &__section{
       flex-shrink: 0;
       width: 100vw;
@@ -204,7 +224,6 @@ export default {
       padding: 24px;
       text-align: left;
       &__heading{
-        
       }
     }
   }
