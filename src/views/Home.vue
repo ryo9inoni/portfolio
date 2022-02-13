@@ -1,10 +1,7 @@
 <template lang="pug">
-.home
-  .scrollBoard(ref="scrollBoard")
+.home(@wheel="Wheel")
 
-  .home__wrapper(
-    ref="wrapper",
-  )
+  .home__wrapper(ref="wrapper")
 
     main.home__main.main(ref="main")
       section.main__section(:data-id="section.id" ref="sections" v-for="section in sections")
@@ -19,10 +16,6 @@
 </template>
 
 <script>
-// import * as THREE from 'three';
-// import vertSource from "@/shaders/shader.vert";
-// import fragSource from "@/shaders/shader.frag";
-
 export default {
   name: "Home",
 	components: {
@@ -67,8 +60,6 @@ export default {
   watch:{},
   computed:{},
   mounted(){
-    
-
     this.width = (this.$refs["main"].clientWidth - window.innerWidth);
 
     for (let index = 0; index < this.$refs["sections"].length; index++) {
@@ -107,8 +98,6 @@ export default {
           this.moveY = this.height;
         }
       }
-
-      console.log();
     },
     Wheel(e){
       if(!this.isDirection && this.moveX >= 0 && this.moveX <= this.width){
@@ -187,10 +176,6 @@ export default {
     left: 0;
     width: 100%;
     height: 100%;
-    cursor: grab;
-    &:active{
-      cursor: grabbing;
-    }
   }
   .main{
     display: flex;
